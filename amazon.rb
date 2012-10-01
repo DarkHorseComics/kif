@@ -1,4 +1,5 @@
 require 'rubygems'
+require 'logger'
 require 'mechanize'
 
 AMAZON_LOGIN = 'https://developer.amazon.com/login.html'
@@ -8,11 +9,16 @@ IAP_GENERAL = 'general/'
 IAP_AVAILABILITY = 'availability/'
 IAP_DESCRIPTION = 'description/'
 IAP_IMAGES = 'multimedia/'
-IAP_SUFFIX = 'detail.html'
+IAP_SUFFIX = 'detail.html?default'
+IAP_EDIT= 'edit.html'
+IAP_NEW = 'new.html'
+
 
 mech = Mechanize.new{  |agent|
   # Flickr refreshes after login
   agent.follow_meta_refresh = true
+  agent.log = Logger.new(STDERR)
+  agent.user_agent_alias = 'Mac Safari'
 }
 
 # Login
@@ -67,6 +73,35 @@ def get_app_id(mech, in_app_page)
   app_id = in_app_page.link_with(:text => "Add an Entitlement").uri.path.split('/')[-2]
 end
 
+def get_item_description_form(mech, item_id)
+  desc_page = mech.get("#{AMAZON_BASE}#{AMAZON_IAP}#{IAP_DESCRIPTION}#{item_id}/#{IAP_SUFFIX}")
+  alt_id = desc_page.form_with(:action => '/iap/entitlement/description/submission.html').encryptedItemMetaDataId
+  edit_page = mech.get("#{AMAZON_BASE}#{AMAZON_IAP}#{IAP_DESCRIPTION}#{alt_id}/#{IAP_EDIT}")
+  #edit_link = desc_page.link_with(:text => "Edit")
+  #if edit_link.nil?
+  #  print "Edit"
+  #  desc_form = mech.click(edit_link).form_with(:action => "/iap/entitlement/description/save.html")
+  #else
+  #  print "new"
+  #  desc_form = desc_page.form_with(:action => "/iap/entitlement/description/save.html")
+  #end
+  desc_form = edit_page.form_with(:action => "/iap/entitlement/description/save.html")
+end
+
+def set_item_description_info(mech, item_id, description, keywords)
+  desc_form = get_item_description_form(mech, item_id)
+  desc_form['selectedCollectableMetaData.dpShortDescription'] = description
+  desc_form['selectedCollectableMetaData.keywordsString'] = keywords
+  desc_form.add_field!('save',nil)
+  pp desc_form
+  desc_form.submit
+end
+
+def get_item_description(mech, item_id)
+  desc_form = get_item_description_form(mech, item_id)
+  desc = desc_form['selectedCollectableMetaData.dpShortDescription']
+end
+
 def update_existing_pricing(mech, existing_item, price, date)
   # Update things
 end
@@ -77,6 +112,8 @@ in_app_page = in_app_management(mech,main_page)
 puts "App ID: " + get_app_id(mech, in_app_page)
 item_id = get_item_app_id(mech, in_app_page, 'Test')
 puts "Test Item ID: " + item_id
+set_item_description_info(mech, item_id, "Test description", "test darkhorse")
+pp get_item_description(mech, item_id)
 #existing_item = get_existing(mech, in_app_page, 'Little Lulu #88')
 
 #pp in_app_page
