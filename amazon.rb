@@ -3,6 +3,13 @@ require 'mechanize'
 
 AMAZON_LOGIN = 'https://developer.amazon.com/login.html'
 
+AMAZON_IAP= 'iap/entitlement/'
+IAP_GENERAL = 'general/'
+IAP_AVAILABILITY = 'availability/'
+IAP_DESCRIPTION = 'description/'
+IAP_IMAGES = 'multimedia/'
+IAP_SUFFIX = 'detail.html'
+
 mech = Mechanize.new{  |agent|
   # Flickr refreshes after login
   agent.follow_meta_refresh = true
@@ -41,10 +48,26 @@ end
 # Update an existing item
 def get_existing(mech, in_app_page, title)
   # search form
+  search_form = in_app_page.forms.find { |f| f.action.include? 'iap_list.html' }
+  search_form.searchText = title
+  search_results = search_form.submit
+  existing_item = mech.click(search_results.links.find { |l| l.to_s.lstrip == title } )
 end
 
+def get_item_app_id(mech, in_app_page, title)
+  existing = get_existing(mech, in_app_page, title)
+  #general_info = 
+end
+
+def update_existing_pricing(mech, existing_item, price, date)
+  # Update things
+end
 main_page = login(mech)
 in_app_page = in_app_management(mech,main_page)
 
-created_item_page = add_new(mech, in_app_page, "Test", "1test")
-pp created_item_page
+existing_item = get_existing(mech, in_app_page, 'Little Lulu #88')
+
+#pp in_app_page
+
+#created_item_page = add_new(mech, in_app_page, "Test", "1test")
+#pp created_item_page
