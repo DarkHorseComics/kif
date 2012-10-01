@@ -55,17 +55,29 @@ def get_existing(mech, in_app_page, title)
 end
 
 def get_item_app_id(mech, in_app_page, title)
-  existing = get_existing(mech, in_app_page, title)
-  #general_info = 
+  search_form = in_app_page.forms.find { |f| f.action.include? 'iap_list.html' }
+  search_form.searchText = title
+  search_results = search_form.submit
+  item_uri = search_results.links.find { |l| l.text.lstrip == title }.uri
+  # Get the item id from the link url
+  item_id = item_uri.path.split('/')[-2]
+end
+
+def get_app_id(mech, in_app_page)
+  app_id = in_app_page.link_with(:text => "Add an Entitlement").uri.path.split('/')[-2]
 end
 
 def update_existing_pricing(mech, existing_item, price, date)
   # Update things
 end
+
 main_page = login(mech)
 in_app_page = in_app_management(mech,main_page)
 
-existing_item = get_existing(mech, in_app_page, 'Little Lulu #88')
+puts "App ID: " + get_app_id(mech, in_app_page)
+item_id = get_item_app_id(mech, in_app_page, 'Test')
+puts "Test Item ID: " + item_id
+#existing_item = get_existing(mech, in_app_page, 'Little Lulu #88')
 
 #pp in_app_page
 
