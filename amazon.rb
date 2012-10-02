@@ -17,7 +17,7 @@ IAP_NEW = 'new.html'
 mech = Mechanize.new{  |agent|
   # Flickr refreshes after login
   agent.follow_meta_refresh = true
-  agent.log = Logger.new(STDERR)
+  #agent.log = Logger.new(STDERR)
   agent.user_agent_alias = 'Mac Safari'
 }
 
@@ -77,15 +77,17 @@ def get_item_description_form(mech, item_id)
   desc_page = mech.get("#{AMAZON_BASE}#{AMAZON_IAP}#{IAP_DESCRIPTION}#{item_id}/#{IAP_SUFFIX}")
   alt_id = desc_page.form_with(:action => '/iap/entitlement/description/submission.html').encryptedItemMetaDataId
   edit_page = mech.get("#{AMAZON_BASE}#{AMAZON_IAP}#{IAP_DESCRIPTION}#{alt_id}/#{IAP_EDIT}")
-  #edit_link = desc_page.link_with(:text => "Edit")
-  #if edit_link.nil?
-  #  print "Edit"
-  #  desc_form = mech.click(edit_link).form_with(:action => "/iap/entitlement/description/save.html")
-  #else
-  #  print "new"
-  #  desc_form = desc_page.form_with(:action => "/iap/entitlement/description/save.html")
-  #end
   desc_form = edit_page.form_with(:action => "/iap/entitlement/description/save.html")
+end
+
+def get_item_availability_form(mech, item_id)
+  edit_page = mech.get("#{AMAZON_BASE}#{AMAZON_IAP}#{IAP_AVAILABILITY}#{item_id}/#{IAP_EDIT}")
+  desc_form = edit_page.form_with(:action => "/iap/entitlement/availability/save.html")
+end
+
+def get_item_multimedia_form(mech, item_id)
+  edit_page = mech.get("#{AMAZON_BASE}#{AMAZON_IAP}#{IAP_IMAGES}#{item_id}/#{IAP_EDIT}")
+  desc_form = edit_page.form_with(:action => "/iap/entitlement/multimedia/save.html")
 end
 
 def set_item_description_info(mech, item_id, description, keywords)
@@ -97,13 +99,17 @@ def set_item_description_info(mech, item_id, description, keywords)
   desc_form.submit
 end
 
+def set_item_availability_info(mech, item_id, price, date)
+  price_form = get_item_availability_form(mech, item_id)
+  price_form['baseListprice.price'] = price
+  price_form['availabilityDate'] = date
+  pp price_form
+  price_form.submit
+end
+
 def get_item_description(mech, item_id)
   desc_form = get_item_description_form(mech, item_id)
   desc = desc_form['selectedCollectableMetaData.dpShortDescription']
-end
-
-def update_existing_pricing(mech, existing_item, price, date)
-  # Update things
 end
 
 main_page = login(mech)
@@ -112,8 +118,12 @@ in_app_page = in_app_management(mech,main_page)
 puts "App ID: " + get_app_id(mech, in_app_page)
 item_id = get_item_app_id(mech, in_app_page, 'Test')
 puts "Test Item ID: " + item_id
-set_item_description_info(mech, item_id, "Test description", "test darkhorse")
-pp get_item_description(mech, item_id)
+#set_item_availability_info(mech, item_id, 0.99, '10/05/2012')
+
+pp get_item_multimedia_form(mech, item_id)
+
+#set_item_description_info(mech, item_id, "Test description", "test darkhorse")
+#pp get_item_description(mech, item_id)
 #existing_item = get_existing(mech, in_app_page, 'Little Lulu #88')
 
 #pp in_app_page
