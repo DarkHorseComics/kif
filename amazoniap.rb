@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'logger'
 require 'mechanize'
+require 'RMagick'
 
 class AmazonIAP
   attr_accessor :mech, :iap 
@@ -11,7 +12,7 @@ class AmazonIAP
     config.each {|key, value| instance_variable_set("@#{key}", value) }
     self.mech = Mechanize.new do |agent|
       agent.follow_meta_refresh = true
-      #agent.log = Logger.new(STDERR)
+      agent.log = Logger.new(STDERR)
       agent.user_agent_alias = 'Mac Safari'
     end
   end
@@ -101,13 +102,33 @@ class AmazonIAP
     price_form.submit
   end
 
+  # Scale a single image into the required format for amazon, requires a PNG
+  def set_item_image(item_id, image)
+    small_icon = image.crop_resized(114, 114, Magick::NorthGravity)
+    large_icon = image.crop_resized(512, 512, Magick::NorthGravity)
+    screenshot = image.crop_resized(1280, 720, Magick::NorthGravity)
+    set_item_images(item_id, small_icon, large_icon, screenshot, screenshot)
+  end
+
   def set_item_images(item_id, small_icon, large_icon, screenshot, purchase_screenshot)
     image_form = get_item_multimedia_form(item_id)
-    image_form.ICON = small_icon
-    image_form.THUMB_AND_BOX= large_icon 
-    image_form.SCREENSHOT= screenshot 
-    image_form.PURCHASESHOT= purchase_screenshot
-    pp image_form
+    submit_image_upload(image_form, small_icon, 'small.png', 'ICON')
+    submit_image_upload(image_form, large_icon, 'large.png', 'THUMB_AND_BOX')
+    submit_image_upload(image_form, screenshot, 'screenshot.png', 'SCREENSHOT')
+    submit_image_upload(image_form, purchase_screenshot, 'purch.png', 'PURCHASESHOT')
+  end
+
+  def submit_image_upload(image_form, image, file_name, field_name)
+    image_form.enctype = 'multipart/form-data'
+    image_form.assetType = field_name 
+    image_form.file_uploads_with(:name => field_name) do |f|
+      unless f.first.nil?
+        f = f.first
+        f.mime_type = "image/png"
+        f.file_name = file_name
+        f.file_data = image.to_blob
+      end
+    end
     image_form.submit
   end
 
