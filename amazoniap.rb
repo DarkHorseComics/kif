@@ -62,9 +62,10 @@ class AmazonIAP < Mechanize
     search_form = self.iap.forms.find { |f| f.action.include? 'iap_list.html' }
     search_form.searchText = title
     search_results = search_form.submit
-    item_uri = search_results.links.find { |l| l.text.lstrip == title }.uri
+    item = search_results.links.find { |l| l.text.lstrip == title }
+    
     # Get the item id from the link url
-    item_id = item_uri.path.split('/')[-2]
+    item_id = item.uri.path.split('/')[-2] unless item.nil?
   end
 
   # Get the Amazon ID for the application
@@ -142,7 +143,12 @@ class AmazonIAP < Mechanize
   # Get the description of an item by item_id
   def get_item_description(item_id)
     desc_form = get_item_description_form(item_id)
-    desc = desc_form['selectedCollectableMetaData.dpShortDescription']
+    desc = {'desc' => desc_form['selectedCollectableMetaData.dpShortDescription'], 'keywords' => desc_form['selectedCollectableMetaData.keywordsString'] }
+  end
+
+  # Get existing item availability and pricing
+  def get_item_availability(item_id)
+    price_form = get_item_availability_form(item_id)
+    availability_info = {'price' => price_form['baseListprice.price'], 'date' => price_form['availabilityDate'] }
   end
 end
-
