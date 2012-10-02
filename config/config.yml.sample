@@ -1,0 +1,17 @@
+# Authentication info
+amazon_email: "test@example.com"
+amazon_pass: "amazonpassword"
+
+# Base URLS
+amazon_base: 'https://developer.amazon.com/'
+amazon_login: amazon_base + 'login.html'
+amazon_apps_url: amazon_base + 'myapps.html'
+amazon_iap: 'iap/entitlement/'
+iap_general: 'general/'
+iap_availability: 'availability/'
+iap_description: 'description/'
+iap_images: 'multimedia/'
+iap_suffix: 'detail.html?default'
+iap_edit: 'edit.html'
+iap_new: 'new.html'
+
